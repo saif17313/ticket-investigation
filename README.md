@@ -1,6 +1,6 @@
 # QueueStorm Investigator
 
-QueueStorm Investigator is an offline, rule-based FastAPI backend for the SUST CSE Carnival 2026 Codex Community Hackathon preliminary challenge. It reads a support complaint and the supplied recent transaction history, then returns an evidence-backed routing decision for support staff.
+QueueStorm Investigator is a FastAPI backend for the SUST CSE Carnival 2026 Codex Community Hackathon preliminary challenge. By default it runs as an offline, deterministic rule-based investigator. It reads a support complaint and the supplied recent transaction history, then returns an evidence-backed routing decision for support staff.
 
 It is an internal support copilot, not an autonomous financial decision maker. It does not connect to bKash or any real payment system.
 
@@ -62,7 +62,7 @@ docker build -t queuestorm-investigator .
 docker run --rm -p 8000:8000 --env-file .env.example queuestorm-investigator
 ```
 
-The image uses `python:3.12-slim`, binds Uvicorn to `0.0.0.0:8000`, has no GPU requirement, and has no network/API-key dependency.
+The image uses `python:3.12-slim`, binds Uvicorn to `0.0.0.0:8000`, has no GPU requirement, and has no network/API-key dependency when `LLM_ENABLED=false`.
 
 ## Tests
 
@@ -75,13 +75,15 @@ The local pack contains ten public-case calibrations. It checks the important de
 
 ## Reasoning design
 
-The service uses deterministic rules rather than a paid AI API:
+The service keeps deterministic rules as the source of truth:
 
 1. It normalizes English/Bangla digits and text, extracts amounts, transaction IDs, phones, and approximate time.
-2. It recognizes phishing/social-engineering reports before financial case types.
-3. It scores provided transactions using explicit IDs, amount, expected transaction type, recipient, time, and recency.
-4. It returns `insufficient_data` instead of guessing where multiple candidates are equally plausible.
-5. It applies case-specific evidence policies, routes to the correct department, derives severity/review status, and generates a concise safe response.
+2. It scans for credential-risk, phishing/social-engineering, and prompt-injection signals before financial case types.
+3. It extracts rule-based facts and checks rule confidence.
+4. If confidence is low and `LLM_ENABLED=true`, an optional Gemini extractor may fill missing facts only. It cannot decide the case type, evidence verdict, severity, department, review policy, or final text.
+5. It scores provided transactions using explicit IDs, amount, expected transaction type, recipient, time, and recency.
+6. It returns `insufficient_data` instead of guessing where multiple candidates are equally plausible.
+7. It applies case-specific evidence policies, routes to the correct department, derives severity/review status, and generates a concise safe response.
 
 | Case type | Department |
 | --- | --- |
@@ -96,8 +98,20 @@ The service uses deterministic rules rather than a paid AI API:
 
 - The service never asks customers for a PIN, OTP, password, secret code, or full card number.
 - It never promises a refund, reversal, account unblock, recovery, or direct financial action. Eligible outcomes are described as being handled through official channels.
-- It does not follow instructions embedded in a complaint; there is no external model or command execution path.
+- It does not follow instructions embedded in a complaint. Optional AI is limited to fact extraction, is disabled by default, and fails back to deterministic rules.
 - A final guard scans generated summaries, actions, and replies for unsafe credential requests, promises, and suspicious third-party contact instructions before returning the response.
+
+## Optional AI fact extraction
+
+AI is not required to run the service. To enable the low-confidence fact-extraction fallback, set these environment variables outside the repo:
+
+```powershell
+$env:LLM_ENABLED = "true"
+$env:GEMINI_API_KEY = "<temporary-key-from-private-env>"
+$env:GEMINI_MODEL = "gemini-2.5-flash"
+```
+
+Do not commit real keys. If the key is missing, the package is unavailable, the model times out, or the model returns invalid JSON, the API returns the deterministic rule-based result.
 
 ## Limitations
 
@@ -108,7 +122,7 @@ The service uses deterministic rules rather than a paid AI API:
 ## Submission checklist
 
 - [x] Required endpoints and exact enum values implemented.
-- [x] Offline rule-based operation; no external AI API required.
+- [x] Offline rule-based operation by default; optional AI fact extraction is fail-safe.
 - [x] Docker fallback and documented run command included.
 - [x] Sample request, generated sample response, and public-case test script included.
 - [x] No real customer data, real payment integrations, or secrets included.

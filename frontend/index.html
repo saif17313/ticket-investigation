@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QueueStorm Investigator Test Form</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f8fb;
+        --panel: #ffffff;
+        --text: #152033;
+        --muted: #617089;
+        --border: #d8e0ec;
+        --primary: #2458f2;
+        --primary-dark: #163dc5;
+        --danger: #b42318;
+        --ok: #067647;
+        --code-bg: #0f172a;
+        --code-text: #d9e5ff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.45;
+      }
+
+      main {
+        width: min(1120px, calc(100% - 32px));
+        margin: 32px auto;
+      }
+
+      header {
+        margin-bottom: 20px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(1.65rem, 3vw, 2.35rem);
+        letter-spacing: -0.04em;
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(340px, 0.9fr);
+        gap: 20px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        box-shadow: 0 18px 40px rgb(21 32 51 / 7%);
+        padding: 22px;
+      }
+
+      form {
+        display: grid;
+        gap: 16px;
+      }
+
+      label {
+        display: grid;
+        gap: 7px;
+        color: #29374d;
+        font-weight: 650;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        color: var(--text);
+        background: #fff;
+        font: inherit;
+        padding: 11px 12px;
+      }
+
+      textarea {
+        min-height: 116px;
+        resize: vertical;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .hint {
+        color: var(--muted);
+        font-size: 0.9rem;
+        font-weight: 400;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+
+      button {
+        border: 0;
+        border-radius: 999px;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 750;
+        padding: 11px 16px;
+      }
+
+      .primary {
+        background: var(--primary);
+        color: white;
+      }
+
+      .primary:hover {
+        background: var(--primary-dark);
+      }
+
+      .secondary {
+        background: #eaf0ff;
+        color: #183b88;
+      }
+
+      .ghost {
+        background: #eef2f7;
+        color: #334155;
+      }
+
+      .status {
+        margin: 0 0 12px;
+        min-height: 24px;
+        font-weight: 750;
+      }
+
+      .status.ok {
+        color: var(--ok);
+      }
+
+      .status.error {
+        color: var(--danger);
+      }
+
+      pre {
+        min-height: 520px;
+        max-height: 70vh;
+        overflow: auto;
+        margin: 0;
+        padding: 16px;
+        background: var(--code-bg);
+        color: var(--code-text);
+        border-radius: 14px;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      code {
+        font-family:
+          "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono",
+          monospace;
+        font-size: 0.9rem;
+      }
+
+      @media (max-width: 860px) {
+        .grid,
+        .row {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>QueueStorm Investigator</h1>
+        <p>
+          Simple local form for sending a POST request to the FastAPI backend
+          and viewing the response as formatted JSON.
+        </p>
+      </header>
+
+      <section class="grid">
+        <div class="card">
+          <form id="ticketForm">
+            <label>
+              API endpoint
+              <input
+                id="endpoint"
+                type="url"
+                value="http://localhost:8000/analyze-ticket"
+                required
+              />
+              <span class="hint">Docker/default backend URL.</span>
+            </label>
+
+            <label>
+              Ticket ID
+              <input id="ticketId" value="TKT-001" required />
+            </label>
+
+            <label>
+              Complaint
+              <textarea id="complaint" required>I sent 5000 taka to a wrong number around 2pm today. The number was supposed to be 01712345678 but I think I typed it wrong. The person is not responding.</textarea>
+            </label>
+
+            <div class="row">
+              <label>
+                Language
+                <select id="language">
+                  <option value="">auto/blank</option>
+                  <option value="en" selected>en</option>
+                  <option value="bn">bn</option>
+                  <option value="mixed">mixed</option>
+                </select>
+              </label>
+
+              <label>
+                Channel
+                <select id="channel">
+                  <option value="">blank</option>
+                  <option value="in_app_chat" selected>in_app_chat</option>
+                  <option value="call_center">call_center</option>
+                  <option value="email">email</option>
+                  <option value="merchant_portal">merchant_portal</option>
+                  <option value="field_agent">field_agent</option>
+                </select>
+              </label>
+
+              <label>
+                User type
+                <select id="userType">
+                  <option value="">blank</option>
+                  <option value="customer" selected>customer</option>
+                  <option value="merchant">merchant</option>
+                  <option value="agent">agent</option>
+                  <option value="unknown">unknown</option>
+                </select>
+              </label>
+            </div>
+
+            <label>
+              Transaction history JSON array
+              <textarea id="transactionHistory" spellcheck="false">[
+  {
+    "transaction_id": "TXN-9101",
+    "timestamp": "2026-04-14T14:08:22Z",
+    "type": "transfer",
+    "amount": 5000,
+    "counterparty": "+8801719876543",
+    "status": "completed"
+  }
+]</textarea>
+              <span class="hint">Use [] if you want to test no-history requests.</span>
+            </label>
+
+            <label>
+              Metadata JSON object
+              <textarea id="metadata" spellcheck="false">{}</textarea>
+              <span class="hint">Optional. Keep as {} if you do not need metadata.</span>
+            </label>
+
+            <div class="actions">
+              <button class="primary" type="submit">Analyze ticket</button>
+              <button class="secondary" id="healthButton" type="button">Check health</button>
+              <button class="ghost" id="sampleButton" type="button">Load sample</button>
+              <button class="ghost" id="clearHistoryButton" type="button">No history</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <p id="status" class="status">Ready.</p>
+          <pre><code id="response">{}</code></pre>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const form = document.querySelector("#ticketForm");
+      const statusEl = document.querySelector("#status");
+      const responseEl = document.querySelector("#response");
+
+      const fields = {
+        endpoint: document.querySelector("#endpoint"),
+        ticketId: document.querySelector("#ticketId"),
+        complaint: document.querySelector("#complaint"),
+        language: document.querySelector("#language"),
+        channel: document.querySelector("#channel"),
+        userType: document.querySelector("#userType"),
+        transactionHistory: document.querySelector("#transactionHistory"),
+        metadata: document.querySelector("#metadata"),
+      };
+
+      const sample = {
+        ticket_id: "TKT-001",
+        complaint:
+          "I sent 5000 taka to a wrong number around 2pm today. The number was supposed to be 01712345678 but I think I typed it wrong. The person is not responding.",
+        language: "en",
+        channel: "in_app_chat",
+        user_type: "customer",
+        transaction_history: [
+          {
+            transaction_id: "TXN-9101",
+            timestamp: "2026-04-14T14:08:22Z",
+            type: "transfer",
+            amount: 5000,
+            counterparty: "+8801719876543",
+            status: "completed",
+          },
+        ],
+        metadata: {},
+      };
+
+      function setStatus(message, kind = "") {
+        statusEl.textContent = message;
+        statusEl.className = `status ${kind}`.trim();
+      }
+
+      function showJson(value) {
+        responseEl.textContent = JSON.stringify(value, null, 2);
+      }
+
+      function readJsonField(textarea, fallback, expectedTypeName) {
+        const raw = textarea.value.trim();
+        if (!raw) {
+          return fallback;
+        }
+
+        const parsed = JSON.parse(raw);
+        if (expectedTypeName === "array" && !Array.isArray(parsed)) {
+          throw new Error(`${textarea.id} must be a JSON array.`);
+        }
+        if (
+          expectedTypeName === "object" &&
+          (Array.isArray(parsed) || parsed === null || typeof parsed !== "object")
+        ) {
+          throw new Error(`${textarea.id} must be a JSON object.`);
+        }
+        return parsed;
+      }
+
+      function buildPayload() {
+        const payload = {
+          ticket_id: fields.ticketId.value.trim(),
+          complaint: fields.complaint.value.trim(),
+        };
+
+        if (fields.language.value) {
+          payload.language = fields.language.value;
+        }
+        if (fields.channel.value) {
+          payload.channel = fields.channel.value;
+        }
+        if (fields.userType.value) {
+          payload.user_type = fields.userType.value;
+        }
+
+        payload.transaction_history = readJsonField(
+          fields.transactionHistory,
+          [],
+          "array",
+        );
+        payload.metadata = readJsonField(fields.metadata, {}, "object");
+
+        return payload;
+      }
+
+      async function parseResponse(response) {
+        const text = await response.text();
+        if (!text) {
+          return null;
+        }
+
+        try {
+          return JSON.parse(text);
+        } catch {
+          return text;
+        }
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        setStatus("Sending request...");
+
+        try {
+          const payload = buildPayload();
+          showJson({ request: payload });
+
+          const response = await fetch(fields.endpoint.value.trim(), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          const data = await parseResponse(response);
+          setStatus(
+            `HTTP ${response.status} ${response.statusText || ""}`.trim(),
+            response.ok ? "ok" : "error",
+          );
+          showJson(data);
+        } catch (error) {
+          setStatus("Request failed.", "error");
+          showJson({
+            error: error.message,
+            tip:
+              "Make sure the backend is running on localhost:8000 and the request JSON is valid.",
+          });
+        }
+      });
+
+      document.querySelector("#healthButton").addEventListener("click", async () => {
+        setStatus("Checking health...");
+
+        try {
+          const url = new URL(fields.endpoint.value.trim());
+          url.pathname = "/health";
+          url.search = "";
+
+          const response = await fetch(url.toString());
+          const data = await parseResponse(response);
+          setStatus(
+            `HTTP ${response.status} ${response.statusText || ""}`.trim(),
+            response.ok ? "ok" : "error",
+          );
+          showJson(data);
+        } catch (error) {
+          setStatus("Health check failed.", "error");
+          showJson({ error: error.message });
+        }
+      });
+
+      document.querySelector("#sampleButton").addEventListener("click", () => {
+        fields.ticketId.value = sample.ticket_id;
+        fields.complaint.value = sample.complaint;
+        fields.language.value = sample.language;
+        fields.channel.value = sample.channel;
+        fields.userType.value = sample.user_type;
+        fields.transactionHistory.value = JSON.stringify(
+          sample.transaction_history,
+          null,
+          2,
+        );
+        fields.metadata.value = JSON.stringify(sample.metadata, null, 2);
+        setStatus("Sample loaded.");
+        showJson({});
+      });
+
+      document.querySelector("#clearHistoryButton").addEventListener("click", () => {
+        fields.transactionHistory.value = "[]";
+        setStatus("Transaction history cleared.");
+      });
+    </script>
+  </body>
+</html>

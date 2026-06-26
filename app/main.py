@@ -1,34 +1,47 @@
 """FastAPI application entrypoint for QueueStorm Investigator."""
 
-from fastapi import FastAPI, Request
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
+from typing import AsyncIterator
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
-
-app = FastAPI(
-    title="QueueStorm Investigator",
-    docs_url=None,
-    redoc_url=None,
-    openapi_url=None,
-)
+from app.core.config import get_settings
+from app.core.errors import register_exception_handlers
+from app.core.logging import configure_logging
 
 
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
-    """Return controlled, non-sensitive errors for malformed and invalid input."""
-    errors = exc.errors()
-    malformed = any(error.get("type") == "json_invalid" for error in errors)
-    missing_required = any(error.get("type") == "missing" for error in errors)
-    if malformed or missing_required:
-        return JSONResponse(status_code=400, content={"detail": "Malformed request body."})
-    return JSONResponse(status_code=422, content={"detail": "Request validation failed."})
+@asynccontextmanager
+async def lifespan(app_: FastAPI) -> AsyncIterator[None]:
+    """Configure process-level concerns without touching public routes."""
+
+    _ = app_
+    configure_logging(get_settings().log_level)
+    yield
 
 
-@app.exception_handler(Exception)
-async def unhandled_exception_handler(_: Request, __: Exception) -> JSONResponse:
-    """Avoid returning stack traces or internal details to callers."""
-    return JSONResponse(status_code=500, content={"detail": "Internal server error."})
+def create_app() -> FastAPI:
+    """Create the API app with docs disabled per the challenge contract."""
+
+    app = FastAPI(
+        title="QueueStorm Investigator",
+        docs_url=None,
+        redoc_url=None,
+        openapi_url=None,
+        lifespan=lifespan,
+    )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "null"],
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["Content-Type"],
+        allow_credentials=False,
+        max_age=600,
+    )
+    register_exception_handlers(app)
+    app.include_router(router)
+    return app
 
 
-app.include_router(router)
+app = create_app()

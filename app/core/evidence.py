@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from app.schemas.enums import CaseType, EvidenceVerdict, TransactionStatus, TransactionType
 from app.schemas.models import AnalyzeTicketRequest, TransactionHistoryItem
+from app.core.facts import ExtractedFacts
 from app.utils.text import has_any
 from app.utils.transaction import (
     find_suspected_duplicate,
@@ -33,9 +34,13 @@ class CandidateSelection:
     ambiguous: bool = False
 
 
-def _select_candidate(request: AnalyzeTicketRequest, case_type: CaseType) -> CandidateSelection:
+def _select_candidate(
+    request: AnalyzeTicketRequest,
+    case_type: CaseType,
+    facts: ExtractedFacts | None,
+) -> CandidateSelection:
     scored = [
-        (score_transaction_match(transaction, request.complaint, case_type), transaction)
+        (score_transaction_match(transaction, request.complaint, case_type, facts), transaction)
         for transaction in request.transaction_history
     ]
     scored = [(score, transaction) for score, transaction in scored if score >= 20]
@@ -67,8 +72,8 @@ def _candidate_or_insufficient(selection: CandidateSelection) -> EvidenceDecisio
     return None
 
 
-def _wrong_transfer(request: AnalyzeTicketRequest) -> EvidenceDecision:
-    selection = _select_candidate(request, CaseType.WRONG_TRANSFER)
+def _wrong_transfer(request: AnalyzeTicketRequest, facts: ExtractedFacts | None) -> EvidenceDecision:
+    selection = _select_candidate(request, CaseType.WRONG_TRANSFER, facts)
     insufficient = _candidate_or_insufficient(selection)
     if insufficient:
         return insufficient
@@ -101,8 +106,8 @@ def _wrong_transfer(request: AnalyzeTicketRequest) -> EvidenceDecision:
     )
 
 
-def _payment_failed(request: AnalyzeTicketRequest) -> EvidenceDecision:
-    selection = _select_candidate(request, CaseType.PAYMENT_FAILED)
+def _payment_failed(request: AnalyzeTicketRequest, facts: ExtractedFacts | None) -> EvidenceDecision:
+    selection = _select_candidate(request, CaseType.PAYMENT_FAILED, facts)
     insufficient = _candidate_or_insufficient(selection)
     if insufficient:
         return insufficient
@@ -127,8 +132,8 @@ def _payment_failed(request: AnalyzeTicketRequest) -> EvidenceDecision:
     return EvidenceDecision(transaction, EvidenceVerdict.INSUFFICIENT_DATA, 0.60, ["transaction_status_missing"])
 
 
-def _refund_request(request: AnalyzeTicketRequest) -> EvidenceDecision:
-    selection = _select_candidate(request, CaseType.REFUND_REQUEST)
+def _refund_request(request: AnalyzeTicketRequest, facts: ExtractedFacts | None) -> EvidenceDecision:
+    selection = _select_candidate(request, CaseType.REFUND_REQUEST, facts)
     insufficient = _candidate_or_insufficient(selection)
     if insufficient:
         return insufficient
@@ -144,7 +149,7 @@ def _refund_request(request: AnalyzeTicketRequest) -> EvidenceDecision:
     return EvidenceDecision(transaction, EvidenceVerdict.INSUFFICIENT_DATA, 0.60, ["refund_evidence_incomplete"])
 
 
-def _duplicate_payment(request: AnalyzeTicketRequest) -> EvidenceDecision:
+def _duplicate_payment(request: AnalyzeTicketRequest, facts: ExtractedFacts | None) -> EvidenceDecision:
     duplicate = find_suspected_duplicate(request.transaction_history)
     if duplicate is not None:
         return EvidenceDecision(
@@ -153,7 +158,7 @@ def _duplicate_payment(request: AnalyzeTicketRequest) -> EvidenceDecision:
             0.93,
             ["duplicate_payment", "duplicate_transaction_pattern"],
         )
-    selection = _select_candidate(request, CaseType.DUPLICATE_PAYMENT)
+    selection = _select_candidate(request, CaseType.DUPLICATE_PAYMENT, facts)
     if selection.ambiguous:
         return EvidenceDecision(None, EvidenceVerdict.INSUFFICIENT_DATA, 0.65, ["ambiguous_transaction_match"])
     if selection.transaction is not None:
@@ -166,8 +171,8 @@ def _duplicate_payment(request: AnalyzeTicketRequest) -> EvidenceDecision:
     return _no_match()
 
 
-def _merchant_settlement(request: AnalyzeTicketRequest) -> EvidenceDecision:
-    selection = _select_candidate(request, CaseType.MERCHANT_SETTLEMENT_DELAY)
+def _merchant_settlement(request: AnalyzeTicketRequest, facts: ExtractedFacts | None) -> EvidenceDecision:
+    selection = _select_candidate(request, CaseType.MERCHANT_SETTLEMENT_DELAY, facts)
     insufficient = _candidate_or_insufficient(selection)
     if insufficient:
         return insufficient
@@ -182,8 +187,8 @@ def _merchant_settlement(request: AnalyzeTicketRequest) -> EvidenceDecision:
     return EvidenceDecision(transaction, EvidenceVerdict.INSUFFICIENT_DATA, 0.60, ["settlement_status_inconclusive"])
 
 
-def _agent_cash_in(request: AnalyzeTicketRequest) -> EvidenceDecision:
-    selection = _select_candidate(request, CaseType.AGENT_CASH_IN_ISSUE)
+def _agent_cash_in(request: AnalyzeTicketRequest, facts: ExtractedFacts | None) -> EvidenceDecision:
+    selection = _select_candidate(request, CaseType.AGENT_CASH_IN_ISSUE, facts)
     insufficient = _candidate_or_insufficient(selection)
     if insufficient:
         return insufficient
@@ -198,20 +203,24 @@ def _agent_cash_in(request: AnalyzeTicketRequest) -> EvidenceDecision:
     return EvidenceDecision(transaction, EvidenceVerdict.INSUFFICIENT_DATA, 0.60, ["cash_in_status_inconclusive"])
 
 
-def decide_evidence(request: AnalyzeTicketRequest, case_type: CaseType) -> EvidenceDecision:
+def decide_evidence(
+    request: AnalyzeTicketRequest,
+    case_type: CaseType,
+    facts: ExtractedFacts | None = None,
+) -> EvidenceDecision:
     """Apply the published evidence policy for a classified case."""
     if case_type == CaseType.PHISHING_OR_SOCIAL_ENGINEERING:
         return EvidenceDecision(None, EvidenceVerdict.INSUFFICIENT_DATA, 0.95, ["phishing_report"])
     if case_type == CaseType.WRONG_TRANSFER:
-        return _wrong_transfer(request)
+        return _wrong_transfer(request, facts)
     if case_type == CaseType.PAYMENT_FAILED:
-        return _payment_failed(request)
+        return _payment_failed(request, facts)
     if case_type == CaseType.REFUND_REQUEST:
-        return _refund_request(request)
+        return _refund_request(request, facts)
     if case_type == CaseType.DUPLICATE_PAYMENT:
-        return _duplicate_payment(request)
+        return _duplicate_payment(request, facts)
     if case_type == CaseType.MERCHANT_SETTLEMENT_DELAY:
-        return _merchant_settlement(request)
+        return _merchant_settlement(request, facts)
     if case_type == CaseType.AGENT_CASH_IN_ISSUE:
-        return _agent_cash_in(request)
+        return _agent_cash_in(request, facts)
     return EvidenceDecision(None, EvidenceVerdict.INSUFFICIENT_DATA, 0.60, ["insufficient_data"])

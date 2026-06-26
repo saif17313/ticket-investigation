@@ -5,10 +5,14 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import datetime
 from itertools import combinations
+from typing import TYPE_CHECKING
 
 from app.schemas.enums import CaseType, TransactionStatus, TransactionType
 from app.schemas.models import TransactionHistoryItem
 from app.utils.text import extract_amounts, extract_approximate_hour, extract_phone_numbers, extract_transaction_ids
+
+if TYPE_CHECKING:
+    from app.core.facts import ExtractedFacts
 
 
 def normalize_counterparty(value: str | None) -> str:
@@ -110,14 +114,15 @@ def score_transaction_match(
     transaction: TransactionHistoryItem,
     complaint: str,
     case_type: CaseType,
+    facts: "ExtractedFacts | None" = None,
 ) -> int:
     """Score only observable complaint/evidence alignment; higher is better."""
     score = 0
-    explicit_ids = extract_transaction_ids(complaint)
+    explicit_ids = list(facts.transaction_ids) if facts is not None else extract_transaction_ids(complaint)
     if explicit_ids and transaction.transaction_id and transaction.transaction_id.upper() in explicit_ids:
         score += 100
 
-    amounts = extract_amounts(complaint)
+    amounts = list(facts.amounts) if facts is not None else extract_amounts(complaint)
     if transaction.amount is not None and any(abs(transaction.amount - amount) < 0.01 for amount in amounts):
         score += 40
 
@@ -131,11 +136,11 @@ def score_transaction_match(
     if case_type in expected_types and transaction.type is not None:
         score += 20 if transaction.type in expected_types[case_type] else -10
 
-    complaint_phones = extract_phone_numbers(complaint)
+    complaint_phones = list(facts.phones) if facts is not None else extract_phone_numbers(complaint)
     if complaint_phones and normalize_counterparty(transaction.counterparty) in complaint_phones:
         score += 20
 
-    complaint_hour = extract_approximate_hour(complaint)
+    complaint_hour = facts.approximate_hour if facts is not None else extract_approximate_hour(complaint)
     if complaint_hour is not None and transaction.timestamp is not None:
         distance = abs(transaction.timestamp.hour - complaint_hour)
         if min(distance, 24 - distance) <= 1:
