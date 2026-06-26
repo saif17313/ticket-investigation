@@ -1,0 +1,27 @@
+{
+  "ticket_id": "T-1002",
+  "complaint": "My payment to merchant M-42 failed but money was deducted",
+  "language": "en",
+  "channel": "web",
+  "user_type": "merchant",
+  "campaign_context": "winter-promo",
+  "transaction_history": [
+    {
+      "transaction_id": "TX2002",
+      "timestamp": "2025-01-02T10:30:00Z",
+      "type": "payment",
+      "amount": 2500.0,
+      "counterparty": "M-42",
+      "status": "failed"
+    },
+    {
+      "transaction_id": "TX2003",
+      "timestamp": "2025-01-02T10:31:00Z",
+      "type": "payment",
+      "amount": 2500.0,
+      "counterparty": "M-42",
+      "status": "failed"
+    }
+  ],
+  "metadata": {}
+}

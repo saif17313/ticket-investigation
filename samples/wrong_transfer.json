@@ -1,0 +1,22 @@
+{
+  "ticket_id": "T-1001",
+  "complaint": "I sent 5000 to the wrong number yesterday",
+  "language": "en",
+  "channel": "app",
+  "user_type": "retail",
+  "campaign_context": "",
+  "transaction_history": [
+    {
+      "transaction_id": "TX1001",
+      "timestamp": "2025-01-01T00:00:00Z",
+      "type": "transfer",
+      "amount": 5000.0,
+      "counterparty": "+8801712345678",
+      "status": "completed"
+    }
+  ],
+  "metadata": {
+    "device": "android",
+    "app_version": "5.4.1"
+  }
+}

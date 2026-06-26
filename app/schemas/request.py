@@ -44,7 +44,10 @@ class AnalyzeRequest(BaseModel):
     language: str = Field(..., min_length=1, description="BCP-47 language tag (e.g. 'en', 'bn').")
     channel: str = Field(..., min_length=1, description="Originating channel (app, web, ussd, ...).")
     user_type: str = Field(..., min_length=1, description="Customer segment (retail, merchant, agent).")
-    campaign_context: str = Field(..., min_length=1, description="Marketing or campaign reference, if any.")
+    # ``campaign_context`` is optional/empty in many real tickets; we allow
+    # ``""`` here so a missing campaign does not produce 422. The field is
+    # still required (must be present) per the specification.
+    campaign_context: str = Field(default="", description="Marketing or campaign reference, if any.")
     transaction_history: list[TransactionIn] = Field(
         default_factory=list,
         description="Recent transactions to evaluate against the complaint.",

@@ -13,6 +13,7 @@ from typing import AsyncIterator
 from fastapi import FastAPI
 
 from app.core.config import get_settings
+from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging
 
 
@@ -45,6 +46,7 @@ def create_app() -> FastAPI:
     from app.api.router import api_router  # local import to avoid cycles
 
     app.include_router(api_router)
+    register_exception_handlers(app)
     return app
 
 

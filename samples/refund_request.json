@@ -1,0 +1,27 @@
+{
+  "ticket_id": "T-1003",
+  "complaint": "Please refund my last order, I was charged twice",
+  "language": "en",
+  "channel": "app",
+  "user_type": "retail",
+  "campaign_context": "",
+  "transaction_history": [
+    {
+      "transaction_id": "TX3001",
+      "timestamp": "2025-01-03T08:00:00Z",
+      "type": "payment",
+      "amount": 1500.0,
+      "counterparty": "M-77",
+      "status": "completed"
+    },
+    {
+      "transaction_id": "TX3002",
+      "timestamp": "2025-01-03T08:01:00Z",
+      "type": "payment",
+      "amount": 1500.0,
+      "counterparty": "M-77",
+      "status": "completed"
+    }
+  ],
+  "metadata": {}
+}

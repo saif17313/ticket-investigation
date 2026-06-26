@@ -12,6 +12,8 @@ from fastapi import APIRouter
 api_router = APIRouter()
 
 # Routers are registered here in later steps. Health is mounted in Step 7.
+from app.api.analyze import router as analyze_router  # noqa: E402
 from app.api.health import router as health_router  # noqa: E402
 
 api_router.include_router(health_router)
+api_router.include_router(analyze_router)
