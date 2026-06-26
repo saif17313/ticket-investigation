@@ -1,0 +1,141 @@
+{
+  "_meta": {
+    "title": "QueueStorm Investigator public sample calibration pack",
+    "source": "SUST Preli Sample Cases",
+    "case_count": 10,
+    "note": "Expected fields are used for local calibration only; hidden cases require general reasoning."
+  },
+  "cases": [
+    {
+      "id": "SAMPLE-01",
+      "label": "Wrong transfer with matching evidence",
+      "input": {
+        "ticket_id": "TKT-001",
+        "complaint": "I sent 5000 taka to a wrong number around 2pm today. The number was supposed to be 01712345678 but I think I typed it wrong. The person is not responding. Please help me get my money back.",
+        "language": "en",
+        "channel": "in_app_chat",
+        "user_type": "customer",
+        "transaction_history": [
+          {"transaction_id": "TXN-9101", "timestamp": "2026-04-14T14:08:22Z", "type": "transfer", "amount": 5000, "counterparty": "+8801719876543", "status": "completed"},
+          {"transaction_id": "TXN-9087", "timestamp": "2026-04-13T18:12:00Z", "type": "cash_in", "amount": 10000, "counterparty": "AGENT-512", "status": "completed"}
+        ]
+      },
+      "expected_output": {"ticket_id": "TKT-001", "relevant_transaction_id": "TXN-9101", "evidence_verdict": "consistent", "case_type": "wrong_transfer", "severity": "high", "department": "dispute_resolution", "human_review_required": true}
+    },
+    {
+      "id": "SAMPLE-02",
+      "label": "Wrong transfer claim with inconsistent evidence",
+      "input": {
+        "ticket_id": "TKT-002",
+        "complaint": "I sent 2000 to the wrong person by mistake. Please reverse it.",
+        "language": "en",
+        "transaction_history": [
+          {"transaction_id": "TXN-9202", "timestamp": "2026-04-14T11:30:00Z", "type": "transfer", "amount": 2000, "counterparty": "+8801812345678", "status": "completed"},
+          {"transaction_id": "TXN-9180", "timestamp": "2026-04-10T09:15:00Z", "type": "transfer", "amount": 2500, "counterparty": "+8801812345678", "status": "completed"},
+          {"transaction_id": "TXN-9145", "timestamp": "2026-04-05T17:45:00Z", "type": "transfer", "amount": 1500, "counterparty": "+8801812345678", "status": "completed"}
+        ]
+      },
+      "expected_output": {"ticket_id": "TKT-002", "relevant_transaction_id": "TXN-9202", "evidence_verdict": "inconsistent", "case_type": "wrong_transfer", "severity": "medium", "department": "dispute_resolution", "human_review_required": true}
+    },
+    {
+      "id": "SAMPLE-03",
+      "label": "Failed payment with balance deducted",
+      "input": {
+        "ticket_id": "TKT-003",
+        "complaint": "I tried to pay 1200 taka for mobile recharge but the app showed failed. My balance was deducted. Please refund my money.",
+        "language": "en",
+        "transaction_history": [
+          {"transaction_id": "TXN-9301", "timestamp": "2026-04-14T16:00:00Z", "type": "payment", "amount": 1200, "counterparty": "MERCHANT-MOBILE-OP", "status": "failed"}
+        ]
+      },
+      "expected_output": {"ticket_id": "TKT-003", "relevant_transaction_id": "TXN-9301", "evidence_verdict": "consistent", "case_type": "payment_failed", "severity": "high", "department": "payments_ops", "human_review_required": false}
+    },
+    {
+      "id": "SAMPLE-04",
+      "label": "Refund request requiring safe handling",
+      "input": {
+        "ticket_id": "TKT-004",
+        "complaint": "I paid 500 taka to a merchant for a product but changed my mind. I want a refund.",
+        "language": "en",
+        "user_type": "customer",
+        "transaction_history": [
+          {"transaction_id": "TXN-9401", "timestamp": "2026-04-14T10:05:00Z", "type": "payment", "amount": 500, "counterparty": "MERCHANT-BOOKS", "status": "completed"}
+        ]
+      },
+      "expected_output": {"ticket_id": "TKT-004", "relevant_transaction_id": "TXN-9401", "evidence_verdict": "consistent", "case_type": "refund_request", "severity": "low", "department": "customer_support", "human_review_required": false}
+    },
+    {
+      "id": "SAMPLE-05",
+      "label": "Phishing or social engineering report",
+      "input": {
+        "ticket_id": "TKT-005",
+        "complaint": "A fake call asked me to share my OTP and PIN. I think it is a scam.",
+        "language": "en",
+        "transaction_history": []
+      },
+      "expected_output": {"ticket_id": "TKT-005", "relevant_transaction_id": null, "evidence_verdict": "insufficient_data", "case_type": "phishing_or_social_engineering", "severity": "critical", "department": "fraud_risk", "human_review_required": true}
+    },
+    {
+      "id": "SAMPLE-06",
+      "label": "Vague complaint, insufficient evidence",
+      "input": {"ticket_id": "TKT-006", "complaint": "Something is wrong with my money.", "language": "en"},
+      "expected_output": {"ticket_id": "TKT-006", "relevant_transaction_id": null, "evidence_verdict": "insufficient_data", "case_type": "other", "severity": "low", "department": "customer_support", "human_review_required": false}
+    },
+    {
+      "id": "SAMPLE-07",
+      "label": "Agent cash-in issue, Bangla complaint",
+      "input": {
+        "ticket_id": "TKT-007",
+        "complaint": "আমি এজেন্টের কাছে ৩০০০ টাকা ক্যাশ ইন করেছি কিন্তু ব্যালেন্স এখনো আপডেট হয়নি।",
+        "language": "bn",
+        "transaction_history": [
+          {"transaction_id": "TXN-9701", "timestamp": "2026-04-14T12:15:00Z", "type": "cash_in", "amount": 3000, "counterparty": "AGENT-203", "status": "pending"}
+        ]
+      },
+      "expected_output": {"ticket_id": "TKT-007", "relevant_transaction_id": "TXN-9701", "evidence_verdict": "consistent", "case_type": "agent_cash_in_issue", "severity": "high", "department": "agent_operations", "human_review_required": true}
+    },
+    {
+      "id": "SAMPLE-08",
+      "label": "Multiple plausible transactions, ambiguous match",
+      "input": {
+        "ticket_id": "TKT-008",
+        "complaint": "I sent 1000 to my brother this morning but I may have sent it to the wrong person. I am not sure which number was wrong. Please help.",
+        "language": "en",
+        "transaction_history": [
+          {"transaction_id": "TXN-9801", "timestamp": "2026-04-14T09:05:00Z", "type": "transfer", "amount": 1000, "counterparty": "+8801711111111", "status": "completed"},
+          {"transaction_id": "TXN-9802", "timestamp": "2026-04-14T10:00:00Z", "type": "transfer", "amount": 1000, "counterparty": "+8801722222222", "status": "completed"}
+        ]
+      },
+      "expected_output": {"ticket_id": "TKT-008", "relevant_transaction_id": null, "evidence_verdict": "insufficient_data", "case_type": "wrong_transfer", "severity": "medium", "department": "dispute_resolution", "human_review_required": false}
+    },
+    {
+      "id": "SAMPLE-09",
+      "label": "Merchant settlement delay",
+      "input": {
+        "ticket_id": "TKT-009",
+        "complaint": "Our merchant settlement of 15000 taka is still pending.",
+        "language": "en",
+        "channel": "merchant_portal",
+        "user_type": "merchant",
+        "transaction_history": [
+          {"transaction_id": "TXN-9901", "timestamp": "2026-04-14T08:00:00Z", "type": "settlement", "amount": 15000, "counterparty": "MERCHANT-990", "status": "pending"}
+        ]
+      },
+      "expected_output": {"ticket_id": "TKT-009", "relevant_transaction_id": "TXN-9901", "evidence_verdict": "consistent", "case_type": "merchant_settlement_delay", "severity": "medium", "department": "merchant_operations", "human_review_required": false}
+    },
+    {
+      "id": "SAMPLE-10",
+      "label": "Duplicate payment claim",
+      "input": {
+        "ticket_id": "TKT-010",
+        "complaint": "I was charged twice for a bill payment of 750 taka.",
+        "language": "en",
+        "transaction_history": [
+          {"transaction_id": "TXN-10001", "timestamp": "2026-04-14T13:00:00Z", "type": "payment", "amount": 750, "counterparty": "BILLER-77", "status": "completed"},
+          {"transaction_id": "TXN-10002", "timestamp": "2026-04-14T13:00:12Z", "type": "payment", "amount": 750, "counterparty": "BILLER-77", "status": "completed"}
+        ]
+      },
+      "expected_output": {"ticket_id": "TKT-010", "relevant_transaction_id": "TXN-10002", "evidence_verdict": "consistent", "case_type": "duplicate_payment", "severity": "high", "department": "payments_ops", "human_review_required": true}
+    }
+  ]
+}
